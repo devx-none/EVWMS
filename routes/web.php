@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Http\Controllers\ProductsController;
+use App\Http\Controllers\DeliveryController;
 
 
 /*
@@ -20,7 +21,5 @@ Route::get('/', function () {
     return view('welcome');
 });
 Route::apiResource('products', ProductsController::class);
-// Route::get('/products', [ProductsController::class, 'index']);
+Route::apiResource('deliveries', DeliveryController::class);
 
-// Route::get('products/{id}', 'ProductsController@show');
-// Route::resource('/products', 'ProductsController');

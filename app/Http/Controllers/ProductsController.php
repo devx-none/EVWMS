@@ -18,7 +18,9 @@ class ProductsController extends Controller
      */
     public function index()
     {
-        //
+        //create token for the request
+        
+
             $url = env('RPC_URL');
             $db = env('RPC_DB');
             $username = env('RPC_USERNAME');
@@ -70,9 +72,60 @@ class ProductsController extends Controller
      * @param  \App\Http\Requests\StoreproductsRequest  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(StoreproductsRequest $request)
+    public function store(Request $request)
     {
         //
+
+            $url = env('RPC_URL');
+            $db = env('RPC_DB');
+            $username = env('RPC_USERNAME');
+            $password = env('RPC_PASSWORD');
+            $url_auth = $url . '/xmlrpc/2/common';
+            $url_exec = $url . '/xmlrpc/2/object';
+
+            $info = Ripcord::client('https://demo.odoo.com/start')->start();
+            $common = Ripcord::client($url_auth);
+            $ver = $common->version();
+           
+
+            //Authenticate the credentials
+            $uid = $common->authenticate($db, $username, $password, array());
+            
+            //Get the models of the database
+            $models = Ripcord::client($url_exec);
+            $check = $models->execute_kw($db, $uid, $password, 'res.partner', 'check_access_rights', array('read'), array('raise_exception' => false));
+
+
+            //Get the fields of the model
+            $fields = $models->execute_kw($db, $uid, $password, 'res.partner', 'fields_get', array(), array('fields' => array('string', 'help', 'type')));
+
+            $name = $request->input('name');
+            $image = $request->input('image_1920');
+            $description = $request->input('description');
+            $price = $request->input('list_price');
+            $cost = $request->input('standard_price');
+            $weight = $request->input('weight');
+            $volume = $request->input('volume');
+            $quantity = $request->input('qty_available');
+            $category = $request->input('categ_id');
+            $reference = $request->input('default_code');
+            $barcode = $request->input('barcode');
+            $tags = $request->input('product_tag_ids');
+            $uom = $request->input('uom_id');
+            $uom_po = $request->input('uom_po_id');
+            $expiration_date = $request->input('euse_expiration_date');
+            $alert_time = $request->input('alert_time');
+            $removal_time = $request->input('removal_time');
+            $tracking = $request->input('tracking');
+            $description_pickingin = $request->input('description_pickingin');
+            $responsible = $request->input('responsible_id');
+
+
+
+            $id = $models->execute_kw($db, $uid, $password, 'product.template', 'create', array(array('name'=>$name,'image'=>$image,'description'=>$description,'list_price'=>$price,'standard_price'=>$cost,'weight'=>$weight,'volume'=>$volume,'qty_available'=>$quantity,'categ_id'=>$category,'default_code'=>$reference,'barcode'=>$barcode,'product_tag_ids'=>$tags,'uom_id'=>$uom,'uom_po_id'=>$uom_po,'euse_expiration_date'=>$expiration_date,'alert_time'=>$alert_time,'removal_time'=>$removal_time,'tracking'=>$tracking,'description_pickingin'=>$description_pickingin,'responsible_id'=>$responsible)));
+
+            return response()->json("product created");
+
     }
 
     /**
