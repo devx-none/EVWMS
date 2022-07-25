@@ -7,6 +7,7 @@ use Ripcord\Ripcord;
 use App\Models\products;
 use App\Http\Requests\StoreproductsRequest;
 use App\Http\Requests\UpdateproductsRequest;
+use Illuminate\Http\Request;
 
 class ProductsController extends Controller
 {
@@ -80,10 +81,10 @@ class ProductsController extends Controller
      * @param  \App\Models\products  $products
      * @return \Illuminate\Http\Response
      */
-    public function show(request $id)
+    public function show($id)
     {
 
-        //serch product by id
+        //Quantity available each product by id
         $url = env('RPC_URL');
         $db = env('RPC_DB');
         $username = env('RPC_USERNAME');
@@ -97,9 +98,14 @@ class ProductsController extends Controller
         $models = Ripcord::client($url_exec);
         $check = $models->execute_kw($db, $uid, $password, 'res.partner', 'check_access_rights', array('read'), array('raise_exception' => false));
         $fields = $models->execute_kw($db, $uid, $password, 'res.partner', 'fields_get', array(), array('fields' => array('string', 'help', 'type')));
-        $products = $models->execute_kw($db, $uid, $password, 'product.template', 'search_read', array(), array('fields' => array('name','qty_available')));
-        $product = $models->execute_kw($db, $uid, $password, 'product.template', 'search_read', array(), array('fields' => array('name','qty_available'),'domain'=>array('id'=>array($id->id))));
-        return response()->json($product);
+        // $ids = $models->execute_kw($db, $uid, $password, 'product.template', 'search', array(array(array('id', '=', '1'))), array('fields'=>array('name', 'qty_available')));
+
+        // $records = $models->execute_kw($db, $uid, $password, 'product.template', 'read', array($ids));
+        
+        $records  = $models->execute_kw($db, $uid, $password, 'product.template', 'search_read', array(array(array('id', '=', $id))), array('fields'=>array('qty_available'), 'limit'=>1));
+      
+
+        return response()->json($records);
    
     }
 

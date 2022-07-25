@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
+use App\Http\Controllers\ProductsController;
 
 
 /*
@@ -18,9 +19,8 @@ use Illuminate\Http\Request;
 Route::get('/', function () {
     return view('welcome');
 });
-// Route::apiResource('products', ProductsController::class);
+Route::apiResource('products', ProductsController::class);
+// Route::get('/products', [ProductsController::class, 'index']);
+
 // Route::get('products/{id}', 'ProductsController@show');
-Route::resource('/products', 'ProductsController');
-
-
-//route for get list products from odoo by id
+// Route::resource('/products', 'ProductsController');
