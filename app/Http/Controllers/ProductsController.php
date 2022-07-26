@@ -99,32 +99,89 @@ class ProductsController extends Controller
             //Get the fields of the model
             $fields = $models->execute_kw($db, $uid, $password, 'res.partner', 'fields_get', array(), array('fields' => array('string', 'help', 'type')));
 
+            
             $name = $request->input('name');
             $image = $request->input('image_1920');
             $description = $request->input('description');
-            $price = $request->input('list_price');
-            $cost = $request->input('standard_price');
+            $price = $request->input('price');
+            $cost = $request->input('cost');
             $weight = $request->input('weight');
             $volume = $request->input('volume');
             $quantity = $request->input('qty_available');
-            $category = $request->input('categ_id');
-            $reference = $request->input('default_code');
+            $category = $request->input('category');
+            $reference = $request->input('reference');
             $barcode = $request->input('barcode');
-            $tags = $request->input('product_tag_ids');
-            $uom = $request->input('uom_id');
-            $uom_po = $request->input('uom_po_id');
-            $expiration_date = $request->input('euse_expiration_date');
+            $tag = $request->input('product_tag');
+            $expiration_date = $request->input('expiration_date');
             $alert_time = $request->input('alert_time');
             $removal_time = $request->input('removal_time');
             $tracking = $request->input('tracking');
             $description_pickingin = $request->input('description_pickingin');
-            $responsible = $request->input('responsible_id');
+
+ 
+            try{
+            
+            //check if tag exists in odoo
+            $tag_id = $models->execute_kw($db, $uid, $password, 'product.tag', 'search_read', array(array(array('name', '=', $tag))), array('fields'=>array('id'), 'limit'=>1));
+            $tag_id = $tag_id[0]['id'];
+
+            //create new tag if not exists
+            if($tag_id == null){
+                $product_tag = $models->execute_kw($db, $uid, $password, 'product.tag', 'create', array(array('name'=>$tag)));
+                $tag_id = $models->execute_kw($db, $uid, $password, 'product.tag', 'search_read', array(array(array('name', '=', $tag))), array('fields'=>array('id'), 'limit'=>1));
+                $tag_id = $tag_id[0]['id'];
+            }
+           
+            //check if category exists in odoo
+            $category_id = $models->execute_kw($db, $uid, $password, 'product.category', 'search_read', array(array(array('name', '=', $category))), array('fields'=>array('id'), 'limit'=>1));
+
+            //create new category if not exists
+            if($category_id == null){
+                $product_category = $models->execute_kw($db, $uid, $password, 'product.category', 'create', array(array('name'=>$category)));
+                $category_id = $models->execute_kw($db, $uid, $password, 'product.category', 'search_read', array(array(array('name', '=', $category))), array('fields'=>array('name'), 'limit'=>1));
+            }
 
 
+            //image encode to base64
+            $image = base64_encode(file_get_contents($image));
+        
 
-            $id = $models->execute_kw($db, $uid, $password, 'product.template', 'create', array(array('name'=>$name,'image'=>$image,'description'=>$description,'list_price'=>$price,'standard_price'=>$cost,'weight'=>$weight,'volume'=>$volume,'qty_available'=>$quantity,'categ_id'=>$category,'default_code'=>$reference,'barcode'=>$barcode,'product_tag_ids'=>$tags,'uom_id'=>$uom,'uom_po_id'=>$uom_po,'euse_expiration_date'=>$expiration_date,'alert_time'=>$alert_time,'removal_time'=>$removal_time,'tracking'=>$tracking,'description_pickingin'=>$description_pickingin,'responsible_id'=>$responsible)));
+            //create new product in odoo
+            $products = $models->execute_kw($db, $uid, $password, 'product.template', 'create', array(array(
+                'name' => $name,
+                'image_1920' => $image,
+                'description' => $description,
+                'list_price' => $price,
+                'standard_price' => $cost,
+                'weight' => $weight,
+                'volume' => $volume,
+                'qty_available' => $quantity,
+                'categ_id' => $category_id[0]['id'],
+                'default_code' => $reference,
+                'barcode' => $barcode,
+                'product_tag_ids' => array($tag_id),
+                'expiration_time' => $expiration_date,
+                'alert_time' => $alert_time,
+                'removal_time' => $removal_time,
+                'description_pickingin' => $description_pickingin,
+            )));
 
-            return response()->json("product created");
+             if($products){
+                
+                return response()->json(['success'=>'Product created successfully', 'products'=>$products]);
+        
+            }else{
+                return response()->json(['error'=>'Product not created']);
+            }
+
+            }catch(Exception $e){
+                return response()->json($e->getMessage());
+            }
+    
+
+            
+
+            
 
     }
 

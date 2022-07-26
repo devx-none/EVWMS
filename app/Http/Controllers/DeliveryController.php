@@ -67,10 +67,11 @@ class DeliveryController extends Controller
         $info_delivery = $request->input('info_delivery');
         $scheduled_date = $request->input('scheduled_date');
         $order_number = $request->input('order_number');
-        $id = $models->execute_kw($db, $uid, $password, 'stock.picking', 'create', array(array('partner_id' => $info_delivery, 'scheduled_date' => $scheduled_date, 'origin' => $order_number)));
+        $picking_type_id = "ui-id-74";
+        $id = $models->execute_kw($db, $uid, $password, 'stock.picking', 'create', array(array('partner_id' => $info_delivery,'picking_type_id'=>$picking_type_id,'scheduled_date' => $scheduled_date, 'origin' => $order_number)));
          
         if($id) {
-            return response()->json(['success' => true, 'message' => 'Delivery created successfully']);
+            return response()->json(['success' => true, 'message' => 'Delivery created successfully',$id]);
         } else {
             return response()->json(['success' => false, 'message' => 'Delivery not created']);
         }
