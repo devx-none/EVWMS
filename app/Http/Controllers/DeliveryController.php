@@ -64,50 +64,103 @@ class DeliveryController extends Controller
         //Get the fields of the model
         $fields = $models->execute_kw($db, $uid, $password, 'res.partner', 'fields_get', array(), array('fields' => array('string', 'help', 'type')));
 
+        
         $name = $request->input('name');
         $street = $request->input('street');
         $city = $request->input('city');
         $zip = $request->input('zip');
         $mobile = $request->input('mobile');
         $scheduled_date = date('Y-m-d H:i:s');
-
         $order_number = $request->input('order_number');
-        $product_name = $request->input('product_name');
-        //send array in request 
+        $barcode_product = $request->input('barcode_product');
+        $quantity = $request->input('quantity');
+        $loc = $request->input('location');
+
 
 
         //check if the partner exists
-        $partner_id = $models->execute_kw($db, $uid, $password, 'res.partner', 'search_read', array(array(array('name', '=', $name))), array('fields' => array('id'), 'limit' => 1));
-        $partner = $models->execute_kw($db, $uid, $password, 'res.partner', 'search_read', array(), array('fields' => array('name')));
+        $partner_id = $models->execute_kw($db, $uid, $password, 'res.partner', 'search_read', array(array(array('name', '=', $name),array('company_type','=','person'))), array('fields' => array('id'), 'limit' => 1));
+        // $partner = $models->execute_kw($db, $uid, $password, 'res.partner', 'search_read', array(), array('fields' => array('name')));
 
         
         if ($partner_id == null) {
             $partner_id = $models->execute_kw($db, $uid, $password, 'res.partner', 'create', array(array('name' => $name, 'street' => $street, 'city' => $city, 'zip' => $zip, 'mobile' => $mobile)));
-            $partner_id = $models->execute_kw($db, $uid, $password, 'res.partner', 'search_read', array(array(array('name', '=', $name))), array('fields' => array('id'), 'limit' => 1));
+            $partner_id = $models->execute_kw($db, $uid, $password, 'res.partner', 'search_read', array(array(array('name', '=', $name,'AND','company_type','=','person'))), array('fields' => array('id'), 'limit' => 1));
 
         }
         
         
         //type Operation
-        $type_operation = $models->execute_kw($db, $uid, $password, 'stock.picking.type', 'search_read', array(array(array('name', '=', "Livraisons"))), array('fields'=>array('id'), 'limit'=>1));
-        if($type_operation){
-            $operation = $type_operation[0]['id'];
-        }
+        $type_operation = $models->execute_kw($db, $uid, $password, 'stock.picking.type', 'search_read', array(array(array('barcode', '=', "WH-DELIVERY"))), array('fields'=>array('id'), 'limit'=>1));
+       
         //location 
-        $location = $models->execute_kw($db, $uid, $password, 'stock.location', 'search_read',array(array(array('barcode', '=', "WH-STOCK"))), array('fields'=>array('id'), 'limit'=>1));
-        // $location = $location[0]['id'];
+        $location = $models->execute_kw($db, $uid, $password, 'stock.location', 'search_read',array(array(array('barcode', '=', $loc))), array('fields'=>array('id'), 'limit'=>1));
 
-        $location_dest_id = $models->execute_kw($db, $uid, $password, 'stock.location', 'search_read',array(array(array('name', '=', "Stock"))), array('fields'=>array('id'), 'limit'=>1));
+        //location destination
+        $location_dest_id = $models->execute_kw($db, $uid, $password, 'stock.location', 'search_read',array(array(array('name', '=', "Customers"))), array('fields'=>array('id'), 'limit'=>1));
 
         //check if products exists
-        $products = $models->execute_kw($db, $uid, $password, 'product.product', 'search_read', array(array(array('name', '=', $product_name))), array('fields'=>array('id'), 'limit'=>1));
+        foreach ($barcode_product as $key => $value) {
+            $product_exist = $models->execute_kw($db, $uid, $password, 'product.product', 'search_read', array(array(array('barcode', '=', $value))), array('fields'=>array('id'), 'limit'=>1));
+            if ($product_exist == null) {
+                return response()->json(['error' => 'Product not found'], 400);
+            }
+            $products[] = $product_exist[0]['id'];
 
-        
-        $delivery = $models->execute_kw($db, $uid, $password, 'stock.picking', 'create', array(array('location_id'=>(int)8,'location_dest_id'=>(int)5,'picking_type_id'=>(int)2,'product_id'=>(int)$products ,'partner_id'=>(int)$partner_id,'scheduled_date'=>$scheduled_date,'origin'=>$order_number)));
+        }
 
-         
+        $arr_products = array();
+        for($i=0;$i<count($products);$i++){
+
+            $arr_products[] =  array('product_id'=>$products[$i],'product_uom_qty'=>$quantity[$i],'product_uom'=>1,'location_id'=>$location[0]['id'],'location_dest_id'=>$location_dest_id[0]['id'],'company_id'=>1,'name'=>'test');
+        }
+       
+
+        $delivery = $models->execute_kw($db, $uid, $password, 'stock.picking', 'create', array(array(
+            'location_id'=>$location[0]['id'],
+            'location_dest_id'=>$location_dest_id[0]['id'],
+            'picking_type_id'=>$type_operation[0]['id'] ,
+            'partner_id'=>$partner_id[0]['id'],
+            'scheduled_date'=>$scheduled_date,
+            'origin'=>$order_number,
+            'move_ids_without_package'=>$arr_products
+        )));
+
+       
+        //create new fields for the model picking
+        $fields = $models->execute_kw($db, $uid, $password, 'stock.move', 'fields_get', array());
+
+
+        $id_model = $models->execute_kw($db, $uid, $password, 'ir.model', 'search_read', array(), array( 'fields'=>array()));
+
+        // $id_model = $models->execute_kw($db, $uid, $password, 'ir.model.fields', 'create', array(array(
+            // 'model_id'=> 403, 'name'=> 'x_location_test', 'field_description'=> 'Delivery',  'relation'=> 'stock.move', 'required'=> false,'ttype'=>'char' ,'readonly'=> false, 'index'=> false, 'store'=> true, 'selectable'=> true, 'translate'=> false, 'selectable'=> true )));
+
+
+
+        //read all models
+        $models = $models->execute_kw($db, $uid, $password, 'ir.model', 'search_read', array(), array('fields'=>array()));
+       
+        //read all fields of the model
+        $fields = $models->execute_kw($db, $uid, $password, 'ir.model', 'search_read', array(), array('fields'=>array()));
+
+        //create new field for the model stock.move
+        $add_fields = $models->execute_kw($db, $uid, $password, 'ir.model.fields', 'create', array(array(
+            'model_id'=> 396, 'name'=> 'x_location_test', 'field_description'=> 'Delivery',  'relation'=> 'stock.picking', 'required'=> false,'ttype'=>'char' ,'readonly'=> false, 'index'=> false, 'store'=> true, 'selectable'=> true, 'translate'=> false, 'selectable'=> true )));
+
+
+        $new_record = $models->execute_kw($db, $uid, $password, 'stock.picking', 'create', array(array('x_location_test' => "test location",'location_id'=>$location[0]['id'],'location_dest_id'=>$location_dest_id[0]['id'],'picking_type_id'=>$type_operation[0]['id'],'partner_id'=>$partner_id[0]['id'],'scheduled_date'=>$scheduled_date,'origin'=>$order_number,'move_ids_without_package'=>$arr_products)));
+
+        // $record = $models->execute_kw($db, $uid, $password, 'stock.picking', 'read', array(array(($record_id)));
+
+
+
+        // $get_new_fields = $models->execute_kw($db, $uid, $password, 'stock.picking', 'read', array(array()));
+
+
         if($delivery) {
-            return response()->json(['success' => true, 'message' => 'Delivery created successfully','delivery:'=>$delivery,'partner_id' =>(int) $partner_id,"products:"=>$products,'picking_type_id'=>(int)$type_operation,'location'=>$location ,'location_dest_id'=>$location_dest_id,'partners'=>$partner,'operation'=>$operation]);
+            return response()->json(['success' => true, 'message' => 'Delivery created successfully','add_fields'=>$add_fields,'new_record'=>$new_record,'id_model'=>$id_model,'arr_products',$arr_products,'delivery:'=>$delivery,'partner_id' =>$partner_id[0]['id'],'picking_type_id'=>$type_operation[0]['id'],'location'=>$location ,'location_dest_id'=>$location_dest_id,'partner_id'=>$partner_id[0]['id']]);
+
         } else {
             return response()->json(['success' => false, 'message' => 'Delivery not created']);
         }
