@@ -25,6 +25,6 @@ Route::apiResource('products', ProductsController::class);
 Route::apiResource('deliveries', DeliveryController::class);
 Route::apiResource('receipts', ReceptionController::class);
 Route::get('/token', function () {
-    return csrf_token(); 
+    return csrf_token();
 });
 
