@@ -11,6 +11,9 @@ class VerifyCsrfToken extends Middleware
      *
      * @var array<int, string>
      */
+    protected $addHttpCookie = true;
+ 
+
     protected $except = [
         //
         'stripe/*',
@@ -18,5 +21,7 @@ class VerifyCsrfToken extends Middleware
         'http://127.0.0.1:8000/products/*',
         'http://127.0.0.1:8000/deliveries',
         'http://127.0.0.1:8000/deliveries/*',
+        'http://127.0.0.1:8000/receipts',
+        'http://127.0.0.1:8000/receipts/*',
     ];
 }

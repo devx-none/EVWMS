@@ -4,12 +4,12 @@ namespace App\Http\Controllers;
 
 use Ripcord\Ripcord;
 
-use App\Models\delivery;
-use App\Http\Requests\StoredeliveryRequest;
-use App\Http\Requests\UpdatedeliveryRequest;
+use App\Models\reception;
+use App\Http\Requests\StorereceptionRequest;
+use App\Http\Requests\UpdatereceptionRequest;
 use Illuminate\Http\Request;
 
-class DeliveryController extends Controller
+class ReceptionController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -19,6 +19,7 @@ class DeliveryController extends Controller
     public function index()
     {
         //
+     
     }
 
     /**
@@ -34,13 +35,12 @@ class DeliveryController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \App\Http\Requests\StoredeliveryRequest  $request
+     * @param  \App\Http\Requests\StorereceptionRequest  $request
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
     {
         //
-
         $url = env('RPC_URL');
         $db = env('RPC_DB');
         $username = env('RPC_USERNAME');
@@ -83,7 +83,7 @@ class DeliveryController extends Controller
         // $partner = $models->execute_kw($db, $uid, $password, 'res.partner', 'search_read', array(), array('fields' => array('name')));
 
         
-        if (empty($partner_id)) {
+        if ($partner_id == null) {
             $partner_id = $models->execute_kw($db, $uid, $password, 'res.partner', 'create', array(array('name' => $name, 'street' => $street, 'city' => $city, 'zip' => $zip, 'mobile' => $mobile)));
             $partner_id = $models->execute_kw($db, $uid, $password, 'res.partner', 'search_read', array(array(array('name', '=', $name,'AND','company_type','=','person'))), array('fields' => array('id'), 'limit' => 1));
 
@@ -91,7 +91,7 @@ class DeliveryController extends Controller
         
         
         //type Operation
-        $type_operation = $models->execute_kw($db, $uid, $password, 'stock.picking.type', 'search_read', array(array(array('barcode', '=', "WH-DELIVERY"))), array('fields'=>array('id'), 'limit'=>1));
+        $type_operation = $models->execute_kw($db, $uid, $password, 'stock.picking.type', 'search_read', array(array(array('barcode', '=', "WH-RECEIPTS"))), array('fields'=>array('id'), 'limit'=>1));
        
         //location 
         $location = $models->execute_kw($db, $uid, $password, 'stock.location', 'search_read',array(array(array('barcode', '=', $loc))), array('fields'=>array('id'), 'limit'=>1));
@@ -116,7 +116,7 @@ class DeliveryController extends Controller
         }
        
 
-        $delivery = $models->execute_kw($db, $uid, $password, 'stock.picking', 'create', array(array(
+        $receipts = $models->execute_kw($db, $uid, $password, 'stock.picking', 'create', array(array(
             'location_id'=>$location[0]['id'],
             'location_dest_id'=>$location_dest_id[0]['id'],
             'picking_type_id'=>$type_operation[0]['id'] ,
@@ -134,22 +134,22 @@ class DeliveryController extends Controller
         $id_model = $models->execute_kw($db, $uid, $password, 'ir.model', 'search_read', array(), array( 'fields'=>array()));
 
         // $id_model = $models->execute_kw($db, $uid, $password, 'ir.model.fields', 'create', array(array(
-            // 'model_id'=> 403, 'name'=> 'x_location_test', 'field_description'=> 'Delivery',  'relation'=> 'stock.move', 'required'=> false,'ttype'=>'char' ,'readonly'=> false, 'index'=> false, 'store'=> true, 'selectable'=> true, 'translate'=> false, 'selectable'=> true )));
+            // 'model_id'=> 403, 'name'=> 'x_location_test', 'field_description'=> 'receipts',  'relation'=> 'stock.move', 'required'=> false,'ttype'=>'char' ,'readonly'=> false, 'index'=> false, 'store'=> true, 'selectable'=> true, 'translate'=> false, 'selectable'=> true )));
 
 
 
         //read all models
-        // $models = $models->execute_kw($db, $uid, $password, 'ir.model', 'search_read', array(), array('fields'=>array()));
+        $models = $models->execute_kw($db, $uid, $password, 'ir.model', 'search_read', array(), array('fields'=>array()));
        
         //read all fields of the model
         // $fields = $models->execute_kw($db, $uid, $password, 'ir.model', 'search_read', array(), array('fields'=>array()));
 
-        // create new field for the model stock.move
-        $add_fields = $models->execute_kw($db, $uid, $password, 'ir.model.fields', 'create', array(array(
-            'model_id'=> 396, 'name'=> 'x_location_test', 'field_description'=> 'Delivery',  'relation'=> 'stock.picking', 'required'=> false,'ttype'=>'char' ,'readonly'=> false, 'index'=> false, 'store'=> true, 'selectable'=> true, 'translate'=> false, 'selectable'=> true )));
+        //create new field for the model stock.move
+        // $add_fields = $models->execute_kw($db, $uid, $password, 'ir.model.fields', 'create', array(array(
+        //     'model_id'=> 396, 'name'=> 'x_location_test', 'field_description'=> 'receipts',  'relation'=> 'stock.picking', 'required'=> false,'ttype'=>'char' ,'readonly'=> false, 'index'=> false, 'store'=> true, 'selectable'=> true, 'translate'=> false, 'selectable'=> true )));
 
 
-        $new_record = $models->execute_kw($db, $uid, $password, 'stock.picking', 'create', array(array('x_location_test' => "test location",'location_id'=>$location[0]['id'],'location_dest_id'=>$location_dest_id[0]['id'],'picking_type_id'=>$type_operation[0]['id'],'partner_id'=>$partner_id[0]['id'],'scheduled_date'=>$scheduled_date,'origin'=>$order_number,'move_ids_without_package'=>$arr_products)));
+        // $new_record = $models->execute_kw($db, $uid, $password, 'stock.picking', 'create', array(array('x_location_test' => "test location",'location_id'=>$location[0]['id'],'location_dest_id'=>$location_dest_id[0]['id'],'picking_type_id'=>$type_operation[0]['id'],'partner_id'=>$partner_id[0]['id'],'scheduled_date'=>$scheduled_date,'origin'=>$order_number,'move_ids_without_package'=>$arr_products)));
 
         // $record = $models->execute_kw($db, $uid, $password, 'stock.picking', 'read', array(array(($record_id)));
 
@@ -158,22 +158,25 @@ class DeliveryController extends Controller
         // $get_new_fields = $models->execute_kw($db, $uid, $password, 'stock.picking', 'read', array(array()));
 
 
-        if($delivery) {
-            // return response()->json(['success' => true, 'message' => 'Delivery created successfully','add_fields'=>$add_fields,'id_model'=>$id_model,'arr_products',$arr_products,'delivery:'=>$delivery,'partner_id' =>$partner_id[0]['id'],'picking_type_id'=>$type_operation[0]['id'],'location'=>$location ,'location_dest_id'=>$location_dest_id,'partner_id'=>$partner_id[0]['id']]);
-            return response()->json(['success' => true, 'message' => 'Delivery created successfully']);
+        if($receipts) {
+            // return response()->json(['success' => true, 'message' => 'receipts created successfully','add_fields'=>$add_fields,'new_record'=>$new_record,'id_model'=>$id_model,'arr_products',$arr_products,'receipts:'=>$receipts,'partner_id' =>$partner_id[0]['id'],'picking_type_id'=>$type_operation[0]['id'],'location'=>$location ,'location_dest_id'=>$location_dest_id,'partner_id'=>$partner_id[0]['id']]);
+            return response()->json(['success' => true, 'message' => 'receipts created successfully']);
 
         } else {
-            return response()->json(['success' => false, 'message' => 'Delivery not created']);
+            return response()->json(['success' => false, 'message' => 'receipts not created']);
         }
+           
+       
+
     }
 
     /**
      * Display the specified resource.
      *
-     * @param  \App\Models\delivery  $delivery
+     * @param  \App\Models\reception  $reception
      * @return \Illuminate\Http\Response
      */
-    public function show(delivery $delivery)
+    public function show(reception $reception)
     {
         //
     }
@@ -181,10 +184,10 @@ class DeliveryController extends Controller
     /**
      * Show the form for editing the specified resource.
      *
-     * @param  \App\Models\delivery  $delivery
+     * @param  \App\Models\reception  $reception
      * @return \Illuminate\Http\Response
      */
-    public function edit(delivery $delivery)
+    public function edit(reception $reception)
     {
         //
     }
@@ -192,11 +195,11 @@ class DeliveryController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param  \App\Http\Requests\UpdatedeliveryRequest  $request
-     * @param  \App\Models\delivery  $delivery
+     * @param  \App\Http\Requests\UpdatereceptionRequest  $request
+     * @param  \App\Models\reception  $reception
      * @return \Illuminate\Http\Response
      */
-    public function update(UpdatedeliveryRequest $request, delivery $delivery)
+    public function update(UpdatereceptionRequest $request, reception $reception)
     {
         //
     }
@@ -204,10 +207,10 @@ class DeliveryController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  \App\Models\delivery  $delivery
+     * @param  \App\Models\reception  $reception
      * @return \Illuminate\Http\Response
      */
-    public function destroy(delivery $delivery)
+    public function destroy(reception $reception)
     {
         //
     }

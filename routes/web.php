@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Http\Controllers\ProductsController;
 use App\Http\Controllers\DeliveryController;
+use App\Http\Controllers\ReceptionController;
 
 
 /*
@@ -22,4 +23,8 @@ Route::get('/', function () {
 });
 Route::apiResource('products', ProductsController::class);
 Route::apiResource('deliveries', DeliveryController::class);
+Route::apiResource('receipts', ReceptionController::class);
+Route::get('/token', function () {
+    return csrf_token(); 
+});
 

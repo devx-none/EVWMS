@@ -45,9 +45,6 @@ class ProductsController extends Controller
             //Get the fields of the model
             $fields = $models->execute_kw($db, $uid, $password, 'res.partner', 'fields_get', array(), array('fields' => array('string', 'help', 'type')));
 
-
-            
-    
             //get list products from odoo
             $products = $models->execute_kw($db, $uid, $password, 'product.template', 'search_read', array(), array('fields' => array('name','qty_available')));
             
@@ -123,14 +120,21 @@ class ProductsController extends Controller
             
             //check if tag exists in odoo
             $tag_id = $models->execute_kw($db, $uid, $password, 'product.tag', 'search_read', array(array(array('name', '=', $tag))), array('fields'=>array('id'), 'limit'=>1));
-            $tag_id = $tag_id[0]['id'];
-
-            //create new tag if not exists
-            if($tag_id == null){
-                $product_tag = $models->execute_kw($db, $uid, $password, 'product.tag', 'create', array(array('name'=>$tag)));
+            if(empty($tag_id)){
+                //create tag in odoo
+                $tag_id = $models->execute_kw($db, $uid, $password, 'product.tag', 'create', array(array('name'=>$tag)));
                 $tag_id = $models->execute_kw($db, $uid, $password, 'product.tag', 'search_read', array(array(array('name', '=', $tag))), array('fields'=>array('id'), 'limit'=>1));
                 $tag_id = $tag_id[0]['id'];
+
+            }else{
+                $tag_id = $tag_id[0]['id'];
             }
+
+            // //create new tag if not exists
+            // if($tag_id == null){
+            //     $product_tag = $models->execute_kw($db, $uid, $password, 'product.tag', 'create', array(array('name'=>$tag)));
+                
+            // }
            
             //check if category exists in odoo
             $category_id = $models->execute_kw($db, $uid, $password, 'product.category', 'search_read', array(array(array('name', '=', $category))), array('fields'=>array('id'), 'limit'=>1));
@@ -160,9 +164,9 @@ class ProductsController extends Controller
                 'default_code' => $reference,
                 'barcode' => $barcode,
                 'product_tag_ids' => array($tag_id),
-                'expiration_time' => $expiration_date,
-                'alert_time' => $alert_time,
-                'removal_time' => $removal_time,
+                // 'expiration_time' => $expiration_date,
+                // 'alert_time' => $alert_time,
+                // 'removal_time' => $removal_time,
                 'description_pickingin' => $description_pickingin,
             )));
 
@@ -177,11 +181,9 @@ class ProductsController extends Controller
             }catch(Exception $e){
                 return response()->json($e->getMessage());
             }
-    
 
-            
 
-            
+        
 
     }
 
